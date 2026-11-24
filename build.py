@@ -33,6 +33,8 @@ const BUILD="{BUILD}";
 {r('base/photos.js')}
 {r('stories.js')}
 {r('more.js')}
+{r('deep.js')}
+{r('briefs.js')}
 {r('guide.js')}
 {r('main.js')}
 {r('planner.js')}

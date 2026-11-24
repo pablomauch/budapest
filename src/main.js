@@ -108,7 +108,7 @@ function deviceSpeak(text,my){
 }
 function stopVoice(){ chainOn=false; hardCancel(); speaking=false; queue=[]; resumeAfter=null; paused=false; lastSpeechEnd=Date.now(); updatePlayer(); }
 function togglePause(){
-  if(!speaking && !STOPS.length){ if(typeof pdId!=="undefined"&&pdId&&$("#pd").classList.contains("on")){ const p=P(pdId); say(p.narr,p.name);} return; }
+  if(!speaking && !STOPS.length){ if(typeof pdId!=="undefined"&&pdId&&$("#pd").classList.contains("on")){ const p=P(pdId); say(`${p.name}. ${BRIEF[p.id]||p.narr}`,p.name);} return; }
   if(!speaking){ if(mode==="stop") say(STOPS[idx].narr,STOPS[idx].name); else legSay(true); return; }
   if(paused){ paused=false; hardCancel(); queue.unshift(cur); next(); }
   else { paused=true; hardCancel(); }
@@ -392,11 +392,13 @@ function renderQuiz(){
   document.querySelectorAll("#quizO .qo").forEach(b=>b.onclick=()=>{ if(quizState.ans[s.id]!=null) return; const i=+b.dataset.i; quizState.ans[s.id]=i; if(i===q.a) quizState.score++; store.set("bud_quiz",quizState); renderQuiz(); $("#score").textContent="⭐ "+quizState.score; say(i===q.a?"¡Correcto! Un punto para ustedes.":`Casi. La respuesta era: ${q.o[q.a]}.`,"Trivia"); });
   $("#score").textContent="⭐ "+quizState.score;
 }
+const TRANS=["Les cuento algo más.","Y ahora, otra historia de este lugar.","Esperen, que hay más.","Sigamos, que esto les va a gustar.","Una más, y es de las buenas.","Y ya que estamos acá, les cuento esto."];
+function nextStory(){ const s=STOPS[idx]; if(!s) return; const ch=CHAPTERS[s.id]||[]; const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]); if(i<0) return; stopVoice(); setTimeout(()=>{ const c=ch[i]; chainOn=true; markTold("ch_"+s.id+"_"+i); say(`${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); },150); }
 function onSpeechEnd(){
   if(speaking||paused||!chainOn||!autoVoice||mode!=="stop"||view!=="guide") return;
   const s=STOPS[idx], ch=CHAPTERS[s.id]||[];
   const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]);
-  if(i>=0){ const c=ch[i]; markTold("ch_"+s.id+"_"+i); say(`Les cuento algo más. ${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); return; }
+  if(i>=0){ const c=ch[i]; markTold("ch_"+s.id+"_"+i); say(`${TRANS[(i+s.id.length)%TRANS.length]} ${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); return; }
   chainOn=false;
   const q=QUIZ[s.id];
   if(q && quizState.ans[s.id]==null){ say(`Y ahora, la trivia de esta parada. ${q.q} ¿${q.o.join(", ").replace(/, ([^,]*)$/," o $1")}? Respondan en la pantalla.`,"🧠 Trivia"); }
@@ -499,7 +501,7 @@ function arrive(auto){
   mode="stop"; view="guide"; visited[STOPS[idx].id]=true; render();
   if(auto) toast("📍 ¡Llegaron a "+STOPS[idx].name+"!");
   try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
-  if(!told["stop_"+STOPS[idx].id] || !auto){ markTold("stop_"+STOPS[idx].id); if(autoVoice||!auto){ chainOn=true; say(STOPS[idx].narr,STOPS[idx].name); } }
+  if(!told["stop_"+STOPS[idx].id] || !auto){ markTold("stop_"+STOPS[idx].id); if(autoVoice||!auto){ chainOn=true; const n=(CHAPTERS[STOPS[idx].id]||[]).length; say(`Llegamos. ${STOPS[idx].narr}${n?" Quédense, que tengo "+(n===1?"una historia más":n+" historias más")+" de este lugar.":""}`,STOPS[idx].name); } }
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function nextUnvisited(){ for(let k=1;k<=STOPS.length;k++){ const j=(idx+k)%STOPS.length; if(!visited[STOPS[j].id]) return j; } return -1; }
@@ -514,7 +516,7 @@ $("#bArrive").onclick=()=>arrive(false);
 $("#bSkip").onclick=()=>{ stopVoice(); const keep=idx; const nx=(()=>{ for(let k=1;k<=STOPS.length;k++){ const j=(keep+k)%STOPS.length; if(!visited[STOPS[j].id]&&j!==keep) return j; } return -1; })(); if(nx<0){ toast("No quedan otras paradas"); return; } idx=nx; mode="walk"; startLeg(); render(); if(autoVoice) legSay(false); };
 $("#bNext").onclick=goNext;
 $("#bLeg").onclick=()=>legSay(true);
-$("#bPlay").onclick=()=>{ if(speaking) togglePause(); else { chainOn=true; say(STOPS[idx].narr,STOPS[idx].name); } };
+$("#bPlay").onclick=()=>{ if(speaking) togglePause(); else { chainOn=true; const n=(CHAPTERS[STOPS[idx].id]||[]).length; say(`Llegamos. ${STOPS[idx].narr}${n?" Quédense, que tengo "+(n===1?"una historia más":n+" historias más")+" de este lugar.":""}`,STOPS[idx].name); } };
 $("#bMore").onclick=()=>{ const n=$("#sNarr"); n.classList.toggle("clamp"); $("#bMore").textContent=n.classList.contains("clamp")?"Leer todo ▾":"Mostrar menos ▴"; };
 $("#bAns").onclick=()=>{ $("#sAns").classList.remove("hidden"); $("#bAns").classList.add("hidden"); };
 $("#bList").onclick=()=>{ if(!STOPS.length){ goPlanner(); return; } view=view==="list"?"guide":"list"; render(); window.scrollTo({top:0}); };

@@ -215,18 +215,19 @@ function fillPlace(id){
  $("#pdChips").innerHTML=p.cats.map(c=>`<span class="pill">${CATNAME[c]}</span>`).join("")+`<span class="pill">~${p.visit} min</span>`;
  $("#pdShort").textContent=p.short;
  $("#pdHours").innerHTML=`<b>${d.long}:</b> ${hoursText(p,d.dow)}. ${p.hnote||""}`;
- $("#pdNarr").textContent=p.narr;
+ $("#pdNarr").textContent=BRIEF[id]||p.narr;
  $("#pdTip").textContent=p.tip||"";
- const ch=(CHAPTERS[id]||[]).length; $("#pdMore").textContent=ch?`Al llegar, la guía tiene ${ch} historia${ch>1?"s":""} más de este lugar y una trivia.`:"";
+ const ch=(CHAPTERS[id]||[]).length; const mins=Math.max(1,Math.round((p.narr+" "+(CHAPTERS[id]||[]).map(c=>c.x).join(" ")).split(/\s+/).length/150));
+ $("#pdMore").innerHTML=`🎧 <b>En el lugar:</b> visita guiada de unos ${mins} minutos${ch?`, con ${ch+1} historias`:""}${QUIZ[id]?" y una trivia":""}. Esta ficha es solo para decidir; las historias se las cuento allá.`;
  $("#pdAdd").textContent=here?`✓ En el ${d.label} · quitar`:(other?`Mover al ${d.label} (está en ${other.label})`:`+ Agregar al ${d.label}`);
  $("#pdAdd").className="btn full "+(here?"":"gold");
  $("#pdMaps").href=mapsUrl(p);
- $("#pdListen .lt b").textContent="Escuchar el relato";
- $("#pdListen .lt span").textContent=`~${Math.max(1,Math.round(p.narr.split(/\s+/).length/150))} min · narrado`;
+ $("#pdListen .lt b").textContent="Escuchar el resumen";
+ $("#pdListen .lt span").textContent=`~${Math.max(1,Math.round((BRIEF[id]||p.narr).split(/\s+/).length/150))} min · qué van a ver y por qué ir`;
 }
 $("#pdBg").onclick=closePlace; $("#pdClose").onclick=closePlace;
 $("#pdAdd").onclick=()=>toggleInPlan(pdId);
-$("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(p.narr,p.name); };
+$("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(`${p.name}. ${BRIEF[p.id]||p.narr}`,p.name); };
 
 /* ---------- arrancar el recorrido del día ---------- */
 function goPlanner(){ view="plan"; render(); updatePlayer(); window.scrollTo({top:0}); setTimeout(()=>{ initPlanMap(); if(pmap) pmap.resize(); renderPlanner(); },60); }

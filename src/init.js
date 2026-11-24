@@ -22,3 +22,5 @@ $("#go").onclick=()=>{ enterApp(); goPlanner(); };
   r.onclick=()=>{ enterApp(); if(restoreActive()){ startCompass(); keepAwake(); initMap(); beginLeg(false); } else goPlanner(); }; } }
 const _beginLeg=beginLeg; beginLeg=function(intro){ if(!map) initMap(); else rebuildStopMarkers(); _beginLeg(intro); };
 updStoryCount(); $("#score").textContent="⭐ "+quizState.score;
+
+$("#bNextStory").onclick=()=>{ unlockAudio(); const s=STOPS[idx], ch=CHAPTERS[s.id]||[]; if(!ch.some((c,k)=>!told["ch_"+s.id+"_"+k])){ toast("Ya les conté todas las historias de este lugar"); return; } nextStory(); };
