@@ -1,4 +1,5 @@
-import os
+import os, time
+BUILD=time.strftime('%Y%m%d%H%M%S')
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),"src"))
 r=lambda p:open(p,encoding="utf-8").read()
 css=r('base/css.css')+r('extra.css')+r('planner.css')+r('splash.css')
@@ -11,6 +12,7 @@ html=f'''<!DOCTYPE html>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Budapest">
 <meta name="theme-color" content="#0b101a">
+<meta name="build" content="{BUILD}">
 <title>Budapest a pie · Audioguía</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +28,7 @@ html=f'''<!DOCTYPE html>
 {r('base/sheet.html')}
 <div class="toast" id="toast"></div>
 <script>
+const BUILD="{BUILD}";
 {r('base/content.js')}
 {r('base/photos.js')}
 {r('stories.js')}
@@ -36,6 +39,7 @@ html=f'''<!DOCTYPE html>
 {r('init.js')}
 {r('base/landing.js')}
 {r('splash.js')}
+{r('refresh.js')}
 </script>
 </body>
 </html>

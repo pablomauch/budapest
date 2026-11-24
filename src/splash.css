@@ -20,3 +20,12 @@
 .sp-bar{width:120px;height:3px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}
 .sp-bar i{display:block;height:100%;width:0;background:var(--gold);transition:width linear}
 @media (prefers-reduced-motion:reduce){.sp-img.on{animation:none}}
+/* ===== deslizar para actualizar ===== */
+#ptr{position:fixed;left:50%;top:calc(var(--st) - 46px);z-index:6000;transform:translate(-50%,0);display:flex;align-items:center;gap:8px;padding:9px 14px 9px 10px;border-radius:99px;background:rgba(23,32,51,.94);border:1px solid rgba(214,226,255,.16);box-shadow:0 10px 30px rgba(0,0,0,.45);font-size:13px;font-weight:700;color:var(--ink);opacity:0;pointer-events:none;transition:opacity .2s}
+#ptr.show{opacity:1;transition:opacity .2s}
+#ptr:not(.show){transition:transform .3s ease,opacity .2s}
+.ptr-ic{width:26px;height:26px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+#ptr.armed .ptr-ic{background:var(--gold);color:#1d1608}
+#ptr.loading .ptr-ic{background:var(--gold);color:#1d1608;animation:ptrsp .8s linear infinite}
+@keyframes ptrsp{to{transform:rotate(360deg)}}
+html,body{overscroll-behavior-y:contain}
