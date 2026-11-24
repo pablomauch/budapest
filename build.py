@@ -36,11 +36,13 @@ const BUILD="{BUILD}";
 {r('deep.js')}
 {r('briefs.js')}
 {r('prologue.js')}
+{r('tips.js')}
 {r('guide.js')}
 {r('main.js')}
 {r('planner.js')}
 {r('init.js')}
 {r('prologue_ui.js')}
+{r('tips_ui.js')}
 {r('base/landing.js')}
 {r('splash.js')}
 {r('refresh.js')}
