@@ -1,0 +1,146 @@
+<!-- ================= APP ================= -->
+<section id="app" class="hidden">
+  <div class="topbar">
+    <div class="tb-row">
+      <button class="tb-title" id="home">Budapest</button>
+      <div class="tb-right">
+        <span class="pill" id="score">⭐ 0</span><span class="pill" id="clock">--:--</span>
+        <span class="pill" id="gps">GPS…</span>
+        <button class="iconbtn" id="bPlanTop" aria-label="Plan">🗺️</button>
+        <button class="iconbtn" id="bList" aria-label="Recorrido">☰</button>
+        <button class="iconbtn" id="bSet" aria-label="Ajustes">⚙️</button>
+      </div>
+    </div>
+    <div class="prog" id="prog"></div>
+  </div>
+
+  <div class="wrap">
+    <!-- PLANIFICADOR -->
+    <div id="plan" class="hidden">
+      <div class="phead"><h1>Su plan en Budapest</h1><p>Agreguen lugares a cada día. La app los ordena sola para caminar lo menos posible y empieza por el más cercano.</p></div>
+      <div class="dtabs" id="dayTabs"></div>
+      <div class="mapwrap pmapwrap"><div id="pmap"></div>
+        <div class="pmlegend"><span><i class="lg on"></i>De día</span><span><i class="lg nt"></i>De noche</span><span><i class="lg"></i>Sin elegir</span></div>
+      </div>
+      <div class="panel ipanel">
+        <div class="ihead"><h2>Recorrido del <span id="bStartN"></span></h2></div>
+        <p class="isum" id="planSum"></p>
+        <div id="itin"></div>
+        <button class="cta" id="bStart" style="margin-top:14px">Empezar el recorrido →</button>
+      </div>
+      <h2 class="sec-t" style="margin-top:28px">Lugares para elegir</h2>
+      <div class="cchips" id="catChips"></div>
+      <div class="catalog" id="catalog"></div>
+      <p class="note" style="text-align:center;margin:18px 0 6px">Horarios de noviembre de 2026. Pueden cambiar por feriados o eventos.</p>
+    </div>
+
+    <!-- CAMINANDO: MAPA -->
+    <div id="walk" class="hidden">
+      <div class="mapwrap">
+        <div id="map"></div>
+        <div class="mapover">
+          <div class="street" id="streetBox"><small>Están en</small><b id="streetName">Buscando calle…</b></div>
+          <div class="mapbtns">
+            <button id="bFull" aria-label="Pantalla completa">⛶</button>
+            <button id="bFollow" class="on" aria-label="Seguirme">◎</button>
+            <button id="bHead" class="on" aria-label="Orientación">🧭</button>
+            <button id="bFit" aria-label="Ver ruta">⤢</button>
+            <button id="bLayer" aria-label="Capa">🛰️</button>
+            <button id="bAR" aria-label="Realidad aumentada" style="font-size:12px;font-weight:800">AR</button>
+          </div>
+        </div>
+        <button class="compass-ask hidden" id="bCompass">🧭 Activar brújula para girar el mapa</button>
+        <div class="navcard">
+          <div class="turn" id="turnIc">↑</div>
+          <div class="tx"><b id="turnTx">Calculando ruta…</b><span id="turnSub"></span></div>
+          <div class="dd"><b id="wDist">—</b><span id="wEta"></span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="nexthead">
+          <div class="th" id="wThumb"></div>
+          <div style="flex:1;min-width:0"><div class="kick" id="wKick"></div><h2 id="wName"></h2></div>
+        </div>
+        <div class="statusrow" id="wBadges"></div>
+        <div class="statusrow"><span class="pill" id="moveState">—</span><span class="pill" id="storyState">Historias: 0</span></div>
+        <div class="dir" id="wDir"></div>
+        <div class="btns">
+          <a class="btn" id="bMaps" target="_blank" rel="noopener">🗺️ Google Maps</a>
+          <button class="btn" id="bLeg">🎧 Contame</button>
+          <button class="btn terra full" id="bAR2">📷 Ver con la cámara (realidad aumentada)</button>
+          <button class="btn gold full" id="bArrive">📍 Llegamos</button>
+        </div>
+        <p class="note" id="manualNote"></p>
+        <div class="feed" id="feed"></div>
+        <button class="more" id="bSkip" style="display:block;margin:6px auto 0;color:var(--mute)">Saltar este lugar ⏭</button>
+      </div>
+    </div>
+
+    <!-- EN EL LUGAR -->
+    <div id="stop" class="hidden">
+      <div class="hero fade" style="min-height:330px"><div class="bg" id="sBg"></div>
+        <div class="in"><div class="kick" id="sKick"></div><div class="hname" id="sName"></div><div class="badges" id="sBadges"></div></div>
+      </div>
+      <div class="panel">
+        <button class="listen" id="bPlay" style="width:100%;text-align:left">
+          <span class="pl" id="plIcon">▶</span>
+          <span class="lt"><b id="plTitle">Escuchar la historia</b><span id="plSub">Narración</span></span>
+          <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+        </button>
+        <div class="narr clamp" id="sNarr"></div>
+        <button class="more" id="bMore">Leer todo ▾</button>
+      </div>
+      <div class="box" id="chapBox"><h3>📚 Más historias de este lugar</h3><div id="chapList"></div></div>
+      <div class="box quiz" id="quizBox"><h3>🧠 Trivia · <span id="quizPts"></span></h3><div id="quizQ" style="font-weight:700;margin-bottom:8px"></div><div id="quizO"></div><div id="quizR" class="ans hidden"></div></div>
+      <div class="box reto"><h3>🎯 Reto</h3><div id="sRetoTxt"></div><button class="more" id="bAns">Ver respuesta</button><div class="ans hidden" id="sAns"></div></div>
+      <div class="box"><h3>💡 Datos prácticos</h3><div id="sTipTxt" style="color:var(--mute);font-size:15px"></div></div>
+      <div class="btns" style="margin-top:14px"><button class="btn gold full" id="bNext"></button></div>
+    </div>
+
+    <!-- LISTA -->
+    <div id="list" class="list hidden" style="margin-top:6px"></div>
+  </div>
+</section>
+
+<div class="player hidden" id="player">
+  <button class="pbtn main" id="pPause" aria-label="Pausa">⏸</button>
+  <div class="np"><b id="npT">Listo</b><span id="npS"></span></div>
+  <button class="pbtn" id="pBack" aria-label="Repetir frase">↺</button>
+  <button class="pbtn" id="pStop" aria-label="Detener">■</button>
+</div>
+
+<!-- FICHA DE LUGAR -->
+<div class="sheet-bg" id="pdBg"></div>
+<div class="sheet pd" id="pd">
+  <div class="pdbar"><button class="pdx" id="pdClose" aria-label="Cerrar">✕</button></div>
+  <div class="pdhero" id="pdHero"></div>
+  <div class="pdin">
+    <div class="kick" id="pdHu"></div>
+    <h2 class="pdname" id="pdName"></h2>
+    <div class="badges" id="pdChips"></div>
+    <p class="pdshort" id="pdShort"></p>
+    <button class="listen" id="pdListen" style="width:100%;text-align:left;margin-top:12px">
+      <span class="pl">▶</span><span class="lt"><b>Escuchar el relato</b><span></span></span>
+      <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+    </button>
+    <div class="pdhours" id="pdHours"></div>
+    <div class="narr" id="pdNarr"></div>
+    <div class="box"><h3>💡 Consejo</h3><div id="pdTip" style="color:var(--mute);font-size:15px"></div></div>
+    <p class="note" id="pdMore"></p>
+    <div class="btns"><button class="btn full gold" id="pdAdd"></button><a class="btn full" id="pdMaps" target="_blank" rel="noopener">🗺️ Cómo llegar</a></div>
+  </div>
+</div>
+
+<!-- REALIDAD AUMENTADA -->
+<div id="ar" class="hidden">
+  <video id="arVideo" playsinline muted autoplay></video>
+  <div id="arLabels"></div>
+  <div class="ar-top">
+    <div class="ar-next"><small>Próximo lugar</small><b id="arNext"></b><span id="arNextD"></span></div>
+    <button id="arClose" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="ar-edge left" id="arL">◀</div><div class="ar-edge right" id="arR">▶</div>
+  <div class="ar-cross"></div>
+  <div class="ar-bottom" id="arHint">Sostengan el teléfono vertical y giren despacio. La brújula puede desviarse unos grados entre edificios.</div>
+</div>
