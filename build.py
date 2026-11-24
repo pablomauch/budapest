@@ -1,7 +1,7 @@
 import os
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)),"src"))
 r=lambda p:open(p,encoding="utf-8").read()
-css=r('base/css.css')+r('extra.css')+r('planner.css')
+css=r('base/css.css')+r('extra.css')+r('planner.css')+r('splash.css')
 html=f'''<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -20,6 +20,7 @@ html=f'''<!DOCTYPE html>
 <style>{css}</style>
 </head>
 <body>
+{r('splash.html')}
 {r('base/landing.html')}
 {r('app.html')}
 {r('base/sheet.html')}
@@ -34,6 +35,7 @@ html=f'''<!DOCTYPE html>
 {r('planner.js')}
 {r('init.js')}
 {r('base/landing.js')}
+{r('splash.js')}
 </script>
 </body>
 </html>

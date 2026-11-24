@@ -368,9 +368,47 @@ body{overflow-x:clip}
 .tb-right{gap:5px}
 @media(max-width:430px){#score{display:none}.tb-title{font-size:18px}.pill{padding:5px 8px}}
 @media(max-width:360px){#clock{display:none}}
+/* ===== LANZADOR ===== */
+#splash{position:fixed;inset:0;z-index:5000;background:#05080f;overflow:hidden;transition:opacity .9s ease,visibility .9s;cursor:pointer}
+#splash.out{opacity:0;visibility:hidden}
+.sp-imgs{position:absolute;inset:0}
+.sp-img{position:absolute;inset:-6%;background-size:cover;background-position:center;opacity:0;transition:opacity 1.4s ease;filter:saturate(1.1)}
+.sp-img.on{opacity:1;animation:spkb 4.5s ease-out forwards}
+@keyframes spkb{from{transform:scale(1.18) rotate(.6deg)}to{transform:scale(1.04) rotate(0)}}
+.sp-shade{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 45%,rgba(5,8,15,.15),rgba(5,8,15,.85) 75%),linear-gradient(180deg,rgba(5,8,15,.5),rgba(5,8,15,0) 30%,rgba(5,8,15,.9))}
+.sp-in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(var(--st) + 30px) 28px calc(var(--sb) + 90px);text-align:center}
+.sp-mark{width:64px;height:64px;border-radius:50%;border:1.5px solid rgba(244,210,140,.7);display:flex;align-items:center;justify-content:center;margin-bottom:34px;opacity:0;animation:spin 1.2s .2s ease forwards;box-shadow:0 0 0 10px rgba(230,184,92,.08),0 0 40px rgba(230,184,92,.25)}
+.sp-mark span{font-family:var(--serif);font-style:italic;font-size:32px;color:var(--gold2)}
+@keyframes spin{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+.sp-lines{position:relative;width:100%;max-width:440px;min-height:9.5em}
+.sp-lines p{position:absolute;left:0;right:0;top:50%;margin:0;transform:translateY(calc(-50% + 18px));opacity:0;filter:blur(6px);transition:opacity .9s ease,transform .9s ease,filter .9s ease;font-family:var(--serif);font-weight:400;font-size:clamp(26px,7.4vw,38px);line-height:1.18;letter-spacing:-.01em;color:#f4f1ea;text-wrap:balance}
+.sp-lines p em{font-style:italic;color:var(--gold2)}
+.sp-lines p.on{opacity:1;transform:translateY(-50%);filter:none}
+.sp-lines p.gone{opacity:0;transform:translateY(calc(-50% - 18px));filter:blur(6px)}
+.sp-lines p.sp-big{font-weight:800;font-size:clamp(34px,10vw,52px);line-height:1.02}
+.sp-foot{position:absolute;left:0;right:0;bottom:calc(var(--sb) + 26px);display:flex;flex-direction:column;align-items:center;gap:10px;color:rgba(244,241,234,.55);font-size:12.5px;letter-spacing:.08em}
+.sp-bar{width:120px;height:3px;border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}
+.sp-bar i{display:block;height:100%;width:0;background:var(--gold);transition:width linear}
+@media (prefers-reduced-motion:reduce){.sp-img.on{animation:none}}
 </style>
 </head>
 <body>
+<!-- ================= LANZADOR ================= -->
+<div id="splash" aria-label="Bienvenida">
+  <div class="sp-imgs" id="spImgs"></div>
+  <div class="sp-shade"></div>
+  <div class="sp-in">
+    <div class="sp-mark"><span>B</span></div>
+    <div class="sp-lines" id="spLines">
+      <p>El Danubio<br>los está esperando.</p>
+      <p>Dos orillas, un río<br>y mil años de historias.</p>
+      <p>Caminen despacio.<br><em>Escuchen. Miren hacia arriba.</em></p>
+      <p class="sp-big">Bienvenidos a <em>Budapest</em>,<br>Pablo y Marce.</p>
+    </div>
+  </div>
+  <div class="sp-foot"><div class="sp-bar"><i id="spBar"></i></div><span>Toquen para entrar</span></div>
+</div>
+
 <!-- ================= LANDING ================= -->
 <section id="landing">
   <div class="slides" id="slides"></div>
@@ -2378,6 +2416,27 @@ updStoryCount(); $("#score").textContent="⭐ "+quizState.score;
   function show(n){ [...els].forEach((e,i)=>{ if(i===n){ e.classList.remove("on"); void e.offsetWidth; e.classList.add("on"); } else e.classList.remove("on"); }); [...ds].forEach((e,i)=>e.classList.toggle("on",i===n)); const c=$("#cap"); c.style.opacity=0; setTimeout(()=>{c.textContent=SLIDES[n][1]; c.style.opacity=1;},400); }
   show(0); landing.t=setInterval(()=>{ if($("#landing").classList.contains("hidden")) return; k=(k+1)%SLIDES.length; show(k); },5200);
   $("#credits").textContent = "Fotos: Wikimedia Commons (licencias CC BY / CC BY-SA / dominio público), autores: Godot13 (Andrew Shiva), Michael LoCascio, Salix39, Dennis G. Jarvis, Veronika Szappanos, D4m1en, Jorge Franganillo, Jorge Láscar, Dezidor, Marc Ryckaert, Sveter, Choinowski, Randy Connolly, Davidi Vardi, Slyronit, Yelkrokoyade, Moyan Brenn y otros. Horarios verificados en noviembre de 2026; pueden cambiar.";
+})();
+
+/* ======================= LANZADOR ======================= */
+(function splash(){
+  const el=$("#splash"); if(!el) return;
+  const imgs=[PH.parlN,PH.chainN,PH.bastion,PH.sunset,PH.szech];
+  const box=$("#spImgs");
+  imgs.forEach(u=>{ const d=document.createElement("div"); d.className="sp-img"; d.style.backgroundImage=`url("${u}")`; box.appendChild(d); });
+  const ims=[...box.children], lines=[...$("#spLines").children];
+  const STEP=1900, TOTAL=STEP*lines.length+1400;
+  let i=0, done=false;
+  function show(n){
+    ims.forEach((e,k)=>{ if(k===n%ims.length){ e.classList.remove("on"); void e.offsetWidth; e.classList.add("on"); } else e.classList.remove("on"); });
+    lines.forEach((p,k)=>{ p.classList.toggle("on",k===n); p.classList.toggle("gone",k<n); });
+  }
+  show(0);
+  const t=setInterval(()=>{ i++; if(i<lines.length) show(i); else clearInterval(t); },STEP);
+  requestAnimationFrame(()=>{ const b=$("#spBar"); b.style.transitionDuration=TOTAL+"ms"; b.style.width="100%"; });
+  function finish(){ if(done) return; done=true; clearInterval(t); el.classList.add("out"); setTimeout(()=>el.remove(),1000); }
+  const auto=setTimeout(finish,TOTAL);
+  el.addEventListener("click",()=>{ clearTimeout(auto); finish(); });
 })();
 
 </script>
