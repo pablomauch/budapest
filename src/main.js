@@ -179,7 +179,9 @@ function addRouteLayers(){
 function routeGeo(){ const coords = route&&route.line ? route.line.map(p=>[p.lng,p.lat]) : []; return {type:"Feature",geometry:{type:"LineString",coordinates:coords}}; }
 function drawRoute(){ if(map&&map.getSource("route")) map.getSource("route").setData(routeGeo()); }
 function rebuildStopMarkers(){ if(!map) return; stopMarkers.forEach(m=>m.remove()); stopMarkers=[]; STOPS.forEach((s,i)=>{ const m=new maplibregl.Marker({element:mkEl(i)}).setLngLat([s.lng,s.lat]).addTo(map); stopMarkers.push(m); }); }
-function refreshMarkers(){ stopMarkers.forEach((m,i)=>{ const s=STOPS[i]; const el=m.getElement(); el.className="mk "+(i===idx?"c":(visited[s.id]?"d":"")); el.textContent = visited[s.id]&&i!==idx?"✓":(i+1); }); }
+/* cambia clases sin borrar las de MapLibre (si se borran, el marcador se dibuja en otro lugar) */
+function mkCls(el,c){ el.className=(c+" "+[...el.classList].filter(x=>x.startsWith("maplibregl")).join(" ")).trim(); }
+function refreshMarkers(){ stopMarkers.forEach((m,i)=>{ const s=STOPS[i]; const el=m.getElement(); mkCls(el,"mk "+(i===idx?"c":(visited[s.id]?"d":""))); el.textContent = visited[s.id]&&i!==idx?"✓":(i+1); }); }
 function poiDone(id){ const m=poiMarkers[id]; if(m) m.getElement().classList.add("d"); }
 let camHead=null;
 function smoothCam(h){ if(h==null) return camHead; if(camHead==null) return camHead=h; const d=((h-camHead+540)%360)-180; camHead=(camHead+d*0.35+360)%360; return camHead; }

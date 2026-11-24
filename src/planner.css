@@ -86,3 +86,15 @@ body{overflow-x:clip}
 .tb-right{gap:5px}
 @media(max-width:430px){#score{display:none}.tb-title{font-size:18px}.pill{padding:5px 8px}}
 @media(max-width:360px){#clock{display:none}}
+
+.pfullbtn{position:absolute;left:10px;top:10px;z-index:6;width:42px;height:42px;border-radius:12px;background:rgba(11,16,26,.85);border:1px solid var(--line);font-size:18px;color:#fff;display:flex;align-items:center;justify-content:center}
+.pmapwrap.full{position:fixed;inset:0;z-index:2500;border-radius:0;margin:0;border:0}
+.pmapwrap.full #pmap{height:100svh}
+.pmapwrap.full .pfullbtn{top:calc(var(--st) + 10px)}
+.pmapwrap.full .pmlegend{bottom:calc(var(--sb) + 84px)}
+body.pfull .player{z-index:2600}
+body.pfull .topbar{display:none}
+.pmapwrap .maplibregl-ctrl-top-right{top:calc(var(--st,0px)*0 + 0px)}
+.pmapwrap.full .maplibregl-ctrl-top-right{top:var(--st)}
+.ln{width:18px;height:4px;border-radius:3px;background:#e6a92e;display:inline-block}
+.ln.nt{background:repeating-linear-gradient(90deg,#6f7dff 0 5px,transparent 5px 9px)}

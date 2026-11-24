@@ -6,6 +6,8 @@ const DAYS = [
 ];
 const NIGHT_FROM = 17*60;          // a partir de aquí arranca el bloque de noche
 const SUNSET = "16:00";
+const DINNER = 19*60+30;   // restaurantes de noche: a partir de las 19:30
+const isMealOnly = p => p.cats.length===1 && p.cats[0]==="comida";
 const CATS = [["todos","Todos"],["imperdible","Imperdibles"],["dia","De día"],["noche","De noche"],["comida","Comer y beber"]];
 const CATNAME = {imperdible:"Imperdible", dia:"De día", noche:"De noche", comida:"Comer y beber"};
 const SUGGEST = {
@@ -61,7 +63,7 @@ function orderPath(start,pts){
 function simulate(seq,start,t,dow,night){
  let d=0,bad=0,prev=start;
  let wait=0;
- for(const p of seq){ const dd=walkD(prev,p); d+=dd; t+=legMin(dd); if(night&&t<NIGHT_FROM) t=NIGHT_FROM; const w=win(p,dow); if(w&&!w.all&&t<w.o&&w.o-t<=300){ wait+=w.o-t; t=w.o; } if(statusAt(p,dow,t).k==="bad") bad++; t+=p.visit; prev=p; }
+ for(const p of seq){ const dd=walkD(prev,p); d+=dd; t+=legMin(dd); if(night&&t<NIGHT_FROM) t=NIGHT_FROM; if(night&&isMealOnly(p)&&t<DINNER){ wait+=DINNER-t; t=DINNER; } const w=win(p,dow); if(w&&!w.all&&t<w.o&&w.o-t<=300){ wait+=w.o-t; t=w.o; } if(statusAt(p,dow,t).k==="bad") bad++; t+=p.visit; prev=p; }
  return {d,bad,t,last:prev,wait};
 }
 /* recorrido más corto, evitando llegar a lugares cerrados si cuesta poco desvío */
@@ -81,7 +83,7 @@ function buildDay(dayK,start,startMin,skipVisited){
  const sim=simulate(dayPts,start,startMin,d.dow,false);
  const nightPts=bestPath(sim.last,items.filter(x=>x.night).map(x=>x.p),sim.t,d.dow,true);
  const out=[]; let t=startMin, prev=start;
- const push=(p,night)=>{ const dd=walkD(prev,p), lm=legMin(dd); t+=lm; if(night && t<NIGHT_FROM) t=NIGHT_FROM; const w=win(p,d.dow); let st; if(w&&!w.all&&t<w.o&&w.o-t<=300){ st={k:"warn",t:`Esperan hasta que abra, ${fmt(w.o)}`}; t=w.o; } const eta=t; st=st||statusAt(p,d.dow,eta); out.push({p,night,eta,legD:dd,legM:lm,st}); t+=p.visit; prev=p; };
+ const push=(p,night)=>{ const dd=walkD(prev,p), lm=legMin(dd); t+=lm; if(night && t<NIGHT_FROM) t=NIGHT_FROM; if(night&&isMealOnly(p)&&t<DINNER) t=DINNER; const w=win(p,d.dow); let st; if(w&&!w.all&&t<w.o&&w.o-t<=300){ st={k:"warn",t:`Esperan hasta que abra, ${fmt(w.o)}`}; t=w.o; } const eta=t; st=st||statusAt(p,d.dow,eta); out.push({p,night,eta,legD:dd,legM:lm,st}); t+=p.visit; prev=p; };
  dayPts.forEach(p=>push(p,false)); nightPts.forEach(p=>push(p,true));
  return out;
 }
@@ -170,9 +172,12 @@ function initPlanMap(){
  if(pmap) return;
  if(typeof maplibregl==="undefined"){ $("#pmap").innerHTML='<div class="nomap">No se pudo cargar el mapa en esta vista. Ábranla desde GitHub Pages.</div>'; return; }
  pmap=new maplibregl.Map({container:"pmap",style:STYLE_DET,center:[19.052,47.500],zoom:13.2,attributionControl:{compact:true}});
- pmap.on("load",()=>{ pmap.addSource("proute",{type:"geojson",data:{type:"Feature",geometry:{type:"LineString",coordinates:[]}}});
-  pmap.addLayer({id:"proute-c",type:"line",source:"proute",layout:{"line-cap":"round","line-join":"round"},paint:{"line-color":"#0b101a","line-width":7,"line-opacity":.35}});
-  pmap.addLayer({id:"proute",type:"line",source:"proute",layout:{"line-cap":"round","line-join":"round"},paint:{"line-color":"#e6b85c","line-width":4}});
+ pmap.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right");
+ pmap.on("load",()=>{ const empty={type:"Feature",geometry:{type:"LineString",coordinates:[]}};
+  pmap.addSource("proute",{type:"geojson",data:empty}); pmap.addSource("proute-n",{type:"geojson",data:empty});
+  pmap.addLayer({id:"proute-c",type:"line",source:"proute",layout:{"line-cap":"round","line-join":"round"},paint:{"line-color":"#0b101a","line-width":8,"line-opacity":.3}});
+  pmap.addLayer({id:"proute",type:"line",source:"proute",layout:{"line-cap":"round","line-join":"round"},paint:{"line-color":"#e6a92e","line-width":4.5}});
+  pmap.addLayer({id:"proute-n",type:"line",source:"proute-n",layout:{"line-cap":"round","line-join":"round"},paint:{"line-color":"#6f7dff","line-width":4,"line-dasharray":[1.2,1.4]}});
   drawPlanMap(true); });
  PLACES.forEach(p=>{ const el=document.createElement("div"); el.className="pm"; el.onclick=e=>{e.stopPropagation(); openPlace(p.id);}; pMarkers[p.id]=new maplibregl.Marker({element:el}).setLngLat([p.lng,p.lat]).addTo(pmap); });
  const he=document.createElement("div"); he.className="pm hotel"; he.textContent="🛏️"; hotelMk=new maplibregl.Marker({element:he}).setLngLat([HOTEL.lng,HOTEL.lat]).addTo(pmap);
@@ -181,17 +186,23 @@ async function drawPlanMap(fit){
  if(!pmap) return;
  const order=lastBuilt.map(x=>x.p.id);
  PLACES.forEach(p=>{ const el=pMarkers[p.id].getElement(); const i=order.indexOf(p.id); const show=catF==="todos"||p.cats.includes(catF)||i>=0;
-  el.className="pm"+(i>=0?" on"+(lastBuilt[i].night?" nt":""):"")+(visited[p.id]&&i>=0?" dn":""); el.textContent=i>=0?(visited[p.id]?"✓":i+1):""; el.style.display=show?"":"none"; el.title=p.name; });
+  mkCls(el,"pm"+(i>=0?" on"+(lastBuilt[i].night?" nt":""):"")+(visited[p.id]&&i>=0?" dn":"")); el.style.zIndex=i>=0?2:1; el.textContent=i>=0?(visited[p.id]?"✓":i+1):""; el.style.display=show?"":"none"; el.title=p.name; });
  if(pos){ if(!pmeMk){ const m=document.createElement("div"); m.className="me2 nobeam"; m.innerHTML='<div class="halo"></div><div class="dot"></div>'; pmeMk=new maplibregl.Marker({element:m}).setLngLat([pos.lng,pos.lat]).addTo(pmap);} else pmeMk.setLngLat([pos.lng,pos.lat]); }
- const st=planStart(); const pts=[st,...lastBuilt.map(x=>x.p)];
- const src=pmap.getSource&&pmap.getSource("proute");
- if(src) src.setData({type:"Feature",geometry:{type:"LineString",coordinates:pts.map(p=>[p.lng,p.lat])}});
- if(pts.length>1 && fit!==false){ const b=pts.reduce((bb,p)=>bb.extend([p.lng,p.lat]),new maplibregl.LngLatBounds([pts[0].lng,pts[0].lat],[pts[0].lng,pts[0].lat])); pmap.fitBounds(b,{padding:50,maxZoom:15.5,duration:600}); }
- // ruta peatonal real (OSRM) por encima de la línea recta
- if(src && pts.length>1 && pts.length<=25){ const my=++routeSeq;
-  try{ const url=`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${pts.map(p=>p.lng+","+p.lat).join(";")}?overview=full&geometries=geojson`;
-   const r=await fetch(url); const j=await r.json(); if(my!==routeSeq) return; if(j.routes&&j.routes[0]) src.setData({type:"Feature",geometry:j.routes[0].geometry}); }catch(e){} }
+ const st=planStart();
+ const dayP=[st,...lastBuilt.filter(x=>!x.night).map(x=>x.p)];
+ const ngt=lastBuilt.filter(x=>x.night).map(x=>x.p);
+ const nightP=ngt.length?[dayP[dayP.length-1],...ngt]:[];
+ const line=a=>({type:"Feature",geometry:{type:"LineString",coordinates:a.map(p=>[p.lng,p.lat])}});
+ const sD=pmap.getSource&&pmap.getSource("proute"), sN=pmap.getSource&&pmap.getSource("proute-n");
+ if(sD){ sD.setData(line(dayP.length>1?dayP:[])); sN.setData(line(nightP)); }
+ const all=[st,...lastBuilt.map(x=>x.p)];
+ if(all.length>1 && fit!==false){ const bb=all.reduce((b,p)=>b.extend([p.lng,p.lat]),new maplibregl.LngLatBounds([all[0].lng,all[0].lat],[all[0].lng,all[0].lat])); pmap.fitBounds(bb,{padding:{top:60,bottom:60,left:40,right:60},maxZoom:15.5,duration:600}); }
+ const my=++routeSeq;
+ const osrm=async(pts,src)=>{ if(!src||pts.length<2||pts.length>25) return; try{ const r=await fetch(`https://routing.openstreetmap.de/routed-foot/route/v1/driving/${pts.map(p=>p.lng+","+p.lat).join(";")}?overview=full&geometries=geojson`); const j=await r.json(); if(my===routeSeq&&j.routes&&j.routes[0]) src.setData({type:"Feature",geometry:j.routes[0].geometry}); }catch(e){} };
+ osrm(dayP,sD); osrm(nightP,sN);
 }
+function setPlanFull(on){ $("#pmapwrap").classList.toggle("full",on); document.body.classList.toggle("pfull",on); $("#bPFull").textContent=on?"✕":"⛶"; setTimeout(()=>{ if(pmap){ pmap.resize(); drawPlanMap(true); } },80); }
+$("#bPFull").onclick=()=>setPlanFull(!$("#pmapwrap").classList.contains("full"));
 
 /* ---------- ficha de detalle ---------- */
 let pdId=null;
