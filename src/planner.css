@@ -98,3 +98,8 @@ body.pfull .topbar{display:none}
 .pmapwrap.full .maplibregl-ctrl-top-right{top:var(--st)}
 .ln{width:18px;height:4px;border-radius:3px;background:#e6a92e;display:inline-block}
 .ln.nt{background:repeating-linear-gradient(90deg,#6f7dff 0 5px,transparent 5px 9px)}
+
+.pmapwrap.full .pmlegend{bottom:calc(var(--sb) + 16px)}
+body.hasplayer .pmapwrap.full .pmlegend{bottom:calc(var(--sb) + 84px)}
+#app{padding-bottom:calc(var(--sb) + 24px)}
+body.hasplayer #app{padding-bottom:calc(var(--sb) + 92px)}

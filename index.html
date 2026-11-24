@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Budapest">
 <meta name="theme-color" content="#0b101a">
-<meta name="build" content="20261124114917">
+<meta name="build" content="20261124115406">
 <title>Budapest a pie · Audioguía</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -381,6 +381,11 @@ body.pfull .topbar{display:none}
 .pmapwrap.full .maplibregl-ctrl-top-right{top:var(--st)}
 .ln{width:18px;height:4px;border-radius:3px;background:#e6a92e;display:inline-block}
 .ln.nt{background:repeating-linear-gradient(90deg,#6f7dff 0 5px,transparent 5px 9px)}
+
+.pmapwrap.full .pmlegend{bottom:calc(var(--sb) + 16px)}
+body.hasplayer .pmapwrap.full .pmlegend{bottom:calc(var(--sb) + 84px)}
+#app{padding-bottom:calc(var(--sb) + 24px)}
+body.hasplayer #app{padding-bottom:calc(var(--sb) + 92px)}
 /* ===== LANZADOR ===== */
 #splash{position:fixed;inset:0;z-index:5000;background:#05080f;overflow:hidden;transition:opacity .9s ease,visibility .9s;cursor:pointer}
 #splash.out{opacity:0;visibility:hidden}
@@ -651,7 +656,7 @@ html,body{overscroll-behavior-y:contain}
 
 <div class="toast" id="toast"></div>
 <script>
-const BUILD="20261124114917";
+const BUILD="20261124115406";
 /* ======================= CATÁLOGO DE LUGARES =======================
    cats: imperdible | dia | noche | comida
    hours: [Dom,Lun,Mar,Mié,Jue,Vie,Sáb]  ""=cerrado · "24h" · "HH:MM-HH:MM"
@@ -2408,10 +2413,10 @@ function fillPlace(id){
 }
 $("#pdBg").onclick=closePlace; $("#pdClose").onclick=closePlace;
 $("#pdAdd").onclick=()=>toggleInPlan(pdId);
-$("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); $("#player").classList.remove("hidden"); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(p.narr,p.name); };
+$("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(p.narr,p.name); };
 
 /* ---------- arrancar el recorrido del día ---------- */
-function goPlanner(){ view="plan"; render(); window.scrollTo({top:0}); setTimeout(()=>{ initPlanMap(); if(pmap) pmap.resize(); renderPlanner(); },60); }
+function goPlanner(){ view="plan"; render(); updatePlayer(); window.scrollTo({top:0}); setTimeout(()=>{ initPlanMap(); if(pmap) pmap.resize(); renderPlanner(); },60); }
 function startDay(){
  unlockAudio(); startCompass(); keepAwake();
  if(!plan[curDay].length){ toast("Primero agreguen lugares al día"); return; }
@@ -2441,10 +2446,13 @@ $("#bStart").onclick=startDay;
 view="plan";
 /* traer la voz elegida en la app de Toledo (mismo sitio) */
 (function migrate(){ try{ if(!localStorage.getItem("bud_prefs")){ const t=JSON.parse(localStorage.getItem("toledo_prefs")||"null"); if(t){ ["rate","prov","key","ovoice","evoice","auto"].forEach(k=>{ if(t[k]!=null) prefs[k]=t[k]; }); store.set("bud_prefs",prefs); if(prefs.rate) rate=prefs.rate; if(prefs.auto===false) autoVoice=false; loadVoices(); } } }catch(e){} })();
-{ const _up=updatePlayer; updatePlayer=function(){ _up(); const on=speaking&&!paused; const p=pdId&&P(pdId); $("#pd").classList.toggle("playing",!!(on&&p&&nowLabel===p.name)); const pl=$("#pdListen .pl"); if(pl) pl.textContent=(on&&p&&nowLabel===p.name)?"❚❚":"▶"; }; }
+{ const _up=updatePlayer; updatePlayer=function(){ _up();
+  /* el reproductor solo aparece cuando hay algo que escuchar: algo sonando o un recorrido en marcha */
+  const show=!$("#app").classList.contains("hidden") && (speaking||paused||(view!=="plan"&&STOPS.length>0));
+  $("#player").classList.toggle("hidden",!show); document.body.classList.toggle("hasplayer",show); const on=speaking&&!paused; const p=pdId&&P(pdId); $("#pd").classList.toggle("playing",!!(on&&p&&nowLabel===p.name)); const pl=$("#pdListen .pl"); if(pl) pl.textContent=(on&&p&&nowLabel===p.name)?"❚❚":"▶"; }; }
 function enterApp(){
   unlockAudio();
-  $("#landing").classList.add("hidden"); $("#app").classList.remove("hidden"); $("#player").classList.remove("hidden");
+  $("#landing").classList.add("hidden"); $("#app").classList.remove("hidden"); updatePlayer();
   window.scrollTo({top:0}); startGeo();
 }
 function restoreActive(){

@@ -226,10 +226,10 @@ function fillPlace(id){
 }
 $("#pdBg").onclick=closePlace; $("#pdClose").onclick=closePlace;
 $("#pdAdd").onclick=()=>toggleInPlan(pdId);
-$("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); $("#player").classList.remove("hidden"); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(p.narr,p.name); };
+$("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(p.narr,p.name); };
 
 /* ---------- arrancar el recorrido del día ---------- */
-function goPlanner(){ view="plan"; render(); window.scrollTo({top:0}); setTimeout(()=>{ initPlanMap(); if(pmap) pmap.resize(); renderPlanner(); },60); }
+function goPlanner(){ view="plan"; render(); updatePlayer(); window.scrollTo({top:0}); setTimeout(()=>{ initPlanMap(); if(pmap) pmap.resize(); renderPlanner(); },60); }
 function startDay(){
  unlockAudio(); startCompass(); keepAwake();
  if(!plan[curDay].length){ toast("Primero agreguen lugares al día"); return; }
