@@ -17,14 +17,30 @@ const REG={"es-MX":["🇲🇽","México"],"es-US":["🇺🇸","EE. UU. (latino)"
 const ORDER=["es-AR","es-CL","es-UY","es-419","es-MX","es-US","es-CO","es-PE","es-VE"];
 const norm=l=>(l||"").replace("_","-");
 function score(v){const l=norm(v.lang).toLowerCase();let i=ORDER.findIndex(o=>l.startsWith(o.toLowerCase()));let s=i<0?(l.startsWith("es-es")?50:60):i*2;if(/premium|enhanced|mejorada|neural|natural|online/i.test(v.name))s-=1.5;if(/eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|bad|bells|boing|bubbles|cellos|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|albert|bahh|fred|junior|kathy|ralph/i.test(v.name))s+=30;return s;}
-function loadVoices(){ if(!synth) return; voices=synth.getVoices().filter(v=>norm(v.lang).toLowerCase().startsWith("es")).sort((a,b)=>score(a)-score(b)); if(prefs.voice){const v=voices.find(v=>v.name===prefs.voice); if(v) voice=v;} if(!voice) voice=voices[0]||null; renderVoices(); }
+/* Voces: iOS no siempre le pasa a la web las voces "mejoradas" que bajaron en Ajustes.
+   Pero si se pide un idioma sin elegir voz, el iPhone usa la voz que está tildada en Ajustes para ese idioma. */
+const SYS=[["es-AR","🇦🇷","Argentina"],["es-CL","🇨🇱","Chile"],["es-MX","🇲🇽","México"],["es-CO","🇨🇴","Colombia"],["es-US","🇺🇸","EE. UU. (latino)"],["es-ES","🇪🇸","España"]];
+let sysLang=null;
+if(!prefs.v2){ prefs.v2=1; if(!prefs.sys&&!prefs.voiceURI){ prefs.sys="es-AR"; } store.set("bud_prefs",prefs); }
+sysLang=prefs.sys||null;
+const isHQ=v=>/premium|enhanced|mejorada|neural|natural/i.test((v.voiceURI||"")+" "+v.name);
+function loadVoices(){ if(!synth) return;
+  const seen=new Set();
+  voices=synth.getVoices().filter(v=>norm(v.lang).toLowerCase().startsWith("es")).filter(v=>{ const k=(v.voiceURI||v.name)+"|"+v.lang; if(seen.has(k)) return false; seen.add(k); return true; }).sort((a,b)=>(score(a)-(isHQ(a)?3:0))-(score(b)-(isHQ(b)?3:0)));
+  voice=null; if(!sysLang){ voice=voices.find(v=>prefs.voiceURI&&v.voiceURI===prefs.voiceURI)||voices.find(v=>v.name===prefs.voice)||null; if(!voice) sysLang="es-AR"; }
+  renderVoices(); }
 if(synth){ loadVoices(); synth.onvoiceschanged=loadVoices; setTimeout(loadVoices,800); }
+function pickSys(l){ sysLang=l; voice=null; prefs.sys=l; delete prefs.voiceURI; delete prefs.voice; store.set("bud_prefs",prefs); renderVoices(); say("Hola, soy su guía por Budapest. ¿Les gusta cómo sueno?","Prueba de voz"); }
+function pickVoice(v){ voice=v; sysLang=null; prefs.voiceURI=v.voiceURI; prefs.voice=v.name; delete prefs.sys; store.set("bud_prefs",prefs); renderVoices(); say("Hola, soy su guía por Budapest. ¿Les gusta cómo sueno?","Prueba de voz"); }
 function renderVoices(){
   const box=$("#vlist"); if(!box) return;
-  if(!voices.length){ box.innerHTML=`<div class="note">No se encontraron voces en español en este teléfono.</div>`; return; }
-  box.innerHTML=voices.slice(0,12).map((v,i)=>{const l=norm(v.lang);const r=Object.keys(REG).find(k=>l.toLowerCase()===k.toLowerCase());const [fl,rg]=r?REG[r]:["🌐",l];
-    return `<button class="vopt ${voice&&v.name===voice.name?"on":""}" data-i="${i}"><span class="fl">${fl}</span><span><b>${v.name.replace(/\(.*\)/,"").trim()}</b><span>${rg}${/premium|enhanced|mejorada|neural/i.test(v.name)?" · alta calidad":""}</span></span></button>`;}).join("");
-  box.querySelectorAll(".vopt").forEach(b=>b.onclick=()=>{voice=voices[+b.dataset.i];prefs.voice=voice.name;store.set("bud_prefs",prefs);renderVoices();say("Hola, soy su guía por Budapest. ¿Les gusta cómo sueno?","Prueba de voz");});
+  let h=`<div class="row-t" style="margin-top:4px">La voz que eligieron en el iPhone</div><p style="color:var(--mute);font-size:13.5px;margin:2px 0 8px">Usa la voz tildada en <b>Ajustes → Accesibilidad → Contenido leído → Voces</b> para ese país, incluidas las <b>mejoradas</b>.</p>`;
+  h+=SYS.map(([l,fl,rg])=>`<button class="vopt ${sysLang===l?"on":""}" data-sys="${l}"><span class="fl">${fl}</span><span><b>Voz de ${rg}</b><span>La que está tildada en Ajustes${l==="es-AR"?" · recomendada":""}</span></span></button>`).join("");
+  if(voices.length){ h+=`<div class="row-t">Otras voces que ve la app</div>`+voices.slice(0,14).map((v,i)=>{const l=norm(v.lang);const r=Object.keys(REG).find(k=>l.toLowerCase()===k.toLowerCase());const [fl,rg]=r?REG[r]:["🌐",l];
+    return `<button class="vopt ${!sysLang&&voice&&v.voiceURI===voice.voiceURI?"on":""}" data-i="${i}"><span class="fl">${fl}</span><span><b>${v.name.replace(/\(.*\)/,"").trim()}${isHQ(v)?" · mejorada":""}</b><span>${rg}</span></span></button>`;}).join(""); }
+  box.innerHTML=h;
+  box.querySelectorAll("[data-sys]").forEach(b=>b.onclick=()=>pickSys(b.dataset.sys));
+  box.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>pickVoice(voices[+b.dataset.i]));
 }
 /* ---- voz premium (OpenAI / ElevenLabs) ---- */
 const AUD=new Audio(); AUD.setAttribute("playsinline",""); AUD.preload="auto";
@@ -84,7 +100,7 @@ function next(){
 function deviceSpeak(text,my){
   if(!synth){ speaking=false; updatePlayer(); return; }
   const u=new SpeechSynthesisUtterance(text);
-  if(voice){u.voice=voice;u.lang=voice.lang;} else u.lang="es-MX";
+  if(!sysLang&&voice){u.voice=voice;u.lang=voice.lang;} else u.lang=sysLang||"es-AR";
   u.rate=rate; u.pitch=1;
   u.onend=()=>{ if(my===gen && !paused) next(); };
   u.onerror=e=>{ if(my===gen && e.error!=="interrupted" && e.error!=="canceled"){ speaking=false; updatePlayer(); } };

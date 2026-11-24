@@ -1,7 +1,7 @@
 /* ======================= ARRANQUE ======================= */
 view="plan";
 /* traer la voz elegida en la app de Toledo (mismo sitio) */
-(function migrate(){ try{ if(!localStorage.getItem("bud_prefs")){ const t=JSON.parse(localStorage.getItem("toledo_prefs")||"null"); if(t){ ["voice","rate","prov","key","ovoice","evoice","auto"].forEach(k=>{ if(t[k]!=null) prefs[k]=t[k]; }); store.set("bud_prefs",prefs); if(prefs.rate) rate=prefs.rate; if(prefs.auto===false) autoVoice=false; loadVoices(); } } }catch(e){} })();
+(function migrate(){ try{ if(!localStorage.getItem("bud_prefs")){ const t=JSON.parse(localStorage.getItem("toledo_prefs")||"null"); if(t){ ["rate","prov","key","ovoice","evoice","auto"].forEach(k=>{ if(t[k]!=null) prefs[k]=t[k]; }); store.set("bud_prefs",prefs); if(prefs.rate) rate=prefs.rate; if(prefs.auto===false) autoVoice=false; loadVoices(); } } }catch(e){} })();
 { const _up=updatePlayer; updatePlayer=function(){ _up(); const on=speaking&&!paused; const p=pdId&&P(pdId); $("#pd").classList.toggle("playing",!!(on&&p&&nowLabel===p.name)); const pl=$("#pdListen .pl"); if(pl) pl.textContent=(on&&p&&nowLabel===p.name)?"❚❚":"▶"; }; }
 function enterApp(){
   unlockAudio();
