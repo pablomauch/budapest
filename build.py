@@ -35,10 +35,12 @@ const BUILD="{BUILD}";
 {r('more.js')}
 {r('deep.js')}
 {r('briefs.js')}
+{r('prologue.js')}
 {r('guide.js')}
 {r('main.js')}
 {r('planner.js')}
 {r('init.js')}
+{r('prologue_ui.js')}
 {r('base/landing.js')}
 {r('splash.js')}
 {r('refresh.js')}

@@ -103,3 +103,12 @@ body.pfull .topbar{display:none}
 body.hasplayer .pmapwrap.full .pmlegend{bottom:calc(var(--sb) + 84px)}
 #app{padding-bottom:calc(var(--sb) + 24px)}
 body.hasplayer #app{padding-bottom:calc(var(--sb) + 92px)}
+
+.prolbtn,.prolbanner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:16px;background:rgba(230,184,92,.14);border:1px solid rgba(230,184,92,.45);margin-top:10px}
+.prolbtn{backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(11,16,26,.45)}
+.prolbanner{margin:0 0 12px}
+.prolbanner.heard{background:var(--card);border-color:var(--line)}
+.prolbtn .pi,.prolbanner .pi{width:40px;height:40px;border-radius:50%;background:var(--gold);color:#1d1608;display:flex;align-items:center;justify-content:center;flex:none;font-size:15px}
+.prolbtn b,.prolbanner b{display:block;font-family:var(--serif);font-weight:600;font-size:17px;line-height:1.15}
+.prolbtn span span,.prolbanner span span{font-size:12.5px;color:var(--mute)}
+.chap.now{border-color:var(--gold)}
