@@ -11,10 +11,11 @@ const isMealOnly = p => p.cats.length===1 && p.cats[0]==="comida";
 const CATS = [["todos","Todos"],["imperdible","Imperdibles"],["dia","De día"],["noche","De noche"],["comida","Comer y beber"]];
 const CATNAME = {imperdible:"Imperdible", dia:"De día", noche:"De noche", comida:"Comer y beber"};
 const SUGGEST = {
- d1:{day:["parlamento","zapatos","libertad","basilica","puente","castillo","matias","bastion"], night:["navidad","crucero","hungarikum"]},
- d2:{day:["sinagoga","newyork","opera","terror","heroes","vajdahunyad","szechenyi"], night:["frici","szimpla"]},
- d3:{day:["mercado","cueva","gellert"], night:[]}
+ d1:{day:["zapatos","parlamento","libertad","basilica","puente","castillo","matias","bastion"], night:["navidad","crucero","hungarikum"]},
+ d2:{day:["sinagoga","museo","newyork","opera","terror","heroes","vajdahunyad","szechenyi"], night:["frici","szimpla"]},
+ d3:{day:["mercado","cueva","gellert","hospital"], night:["mirador"]}
 };
+const MUST = PLACES.filter(p=>p.cats.includes("imperdible")).map(p=>p.id);
 const P = id => PLACES.find(p=>p.id===id);
 let STOPS = [];                     // recorrido activo (lugares ordenados)
 let plan = store.get("bud_plan") || {d1:[],d2:[],d3:[]};
@@ -164,7 +165,24 @@ function suggest(k){
  plan[k]=[...s.day.filter(i=>!taken.has(i)).map(id=>({id,night:false})),...s.night.filter(i=>!taken.has(i)).map(id=>({id,night:true}))];
  savePlan(); renderPlanner(); toast("✨ Plan sugerido. Agreguen o quiten lo que quieran.");
 }
-function renderPlanner(){ renderTabs(); renderItinerary(); renderCatalog(); drawPlanMap(); $("#bStartN").textContent=DAYS.find(d=>d.k===curDay).label; }
+let fullArm=false;
+function suggestAll(){
+ const any=DAYS.some(d=>plan[d.k].length);
+ if(any&&!fullArm){ fullArm=true; toast("Tóquenlo otra vez para reemplazar su plan actual por el plan completo"); setTimeout(()=>fullArm=false,5000); return; }
+ fullArm=false;
+ DAYS.forEach(d=>{ const s=SUGGEST[d.k]; plan[d.k]=[...s.day.map(id=>({id,night:false})),...s.night.map(id=>({id,night:true}))]; });
+ savePlan(); renderPlanner(); toast("✨ Plan completo: los 12 imperdibles y "+(DAYS.reduce((n,d)=>n+plan[d.k].length,0)-MUST.length)+" lugares más en 3 días");
+}
+function renderCoverage(){
+ const inAny=id=>DAYS.some(d=>plan[d.k].some(x=>x.id===id));
+ const miss=MUST.filter(id=>!inAny(id)); const n=MUST.length-miss.length;
+ $("#cover").innerHTML=`<div class="covtop"><b>Imperdibles en su plan: ${n} de ${MUST.length}</b><div class="covbar"><i style="width:${n/MUST.length*100}%"></i></div></div>`+
+  (miss.length?`<div class="covmiss">Les faltan: ${miss.map(id=>`<button class="covchip" data-c="${id}">+ ${P(id).name}</button>`).join("")}</div><span class="covhint">Se agregan al día que están mirando.</span>`:`<span class="covhint">✓ No se pierden ninguno de los lugares esenciales.</span>`)+
+  `<button class="btn ${DAYS.some(d=>plan[d.k].length)?"":"gold"} full" id="bSuggestAll" style="margin-top:10px">✨ Armarme los 3 días completos</button>`;
+ $("#cover").querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>toggleInPlan(b.dataset.c,false));
+ $("#bSuggestAll").onclick=suggestAll;
+}
+function renderPlanner(){ renderCoverage(); renderTabs(); renderItinerary(); renderCatalog(); drawPlanMap(); $("#bStartN").textContent=DAYS.find(d=>d.k===curDay).label; }
 
 /* ---------- mapa del planificador ---------- */
 let pmap=null, pMarkers={}, hotelMk=null, pmeMk=null, routeSeq=0;
