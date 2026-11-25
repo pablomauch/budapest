@@ -80,8 +80,14 @@ function sayIfFree(text,label){ if(speaking||paused) return false; say(text,labe
 /* sayUrgent: indicación de giro; interrumpe y luego retoma la historia */
 function sayUrgent(text){
   if(!synth) return;
-  const saved = speaking&&!paused ? {q:[cur,...queue].filter(Boolean),label:nowLabel} : (resumeAfter||null);
+  const inStory = speaking&&!paused&&nowLabel!=="Indicación";
+  const saved = inStory ? {q:[cur,...queue].filter(x=>x&&!x.startsWith("\u200B")),label:nowLabel} : (resumeAfter||(speaking&&!paused&&nowLabel==="Indicación"&&queue.length?{q:queue.slice(),label:nowLabel}:null));
   hardCancel(); queue=[text]; nowLabel="Indicación"; resumeAfter=saved; paused=false; next();
+}
+function sayBetween(text){
+  if(!synth) return;
+  if(!speaking||paused||premiumOn()||nowLabel==="Indicación"){ sayUrgent(text); return; }
+  queue.unshift("\u200B"+text); /* entra entre dos frases, sin cortar; marcada para no repetirla al retomar */
 }
 function next(){
   if(!queue.length && resumeAfter){ queue=resumeAfter.q; nowLabel=resumeAfter.label; resumeAfter=null; }
@@ -275,7 +281,7 @@ function checkSteps(){
     }
   }
   const st=route.steps[i0], d=dist(pos,st.loc);
-  if(isTurn(st) && !st.pre && d<75 && d>35 && autoVoice && !stationary){ st.pre=true; sayUrgent(`En unos ${Math.round(d/10)*10} metros, ${lc(stepText(st).tx)}.`); walkedSinceInstr=0; }
+  if(isTurn(st) && !st.pre && d<75 && d>35 && autoVoice && !stationary){ st.pre=true; sayBetween(`En unos ${Math.round(d/10)*10} metros, ${lc(stepText(st).tx)}.`); walkedSinceInstr=0; }
 }
 const OKS=["Van bien, sigan por esta calle.","Perfecto, sigan así.","Bien encaminados. Sigan derecho.","Todo en orden, sigan por aquí."];
 function reassure(){
@@ -295,7 +301,7 @@ function checkPois(){
     const d=dist(pos,p); if(d>p.r) continue;
     markTold("poi_"+p.id); poiDone(p.id);
     const rd=d<12?"aquí mismo":relDir(bearing(pos,p));
-    sayUrgent(`Miren, ${rd}: ${p.t}`); feedAdd("★",`<b>${p.n}</b>`); updStoryCount(); walkedSinceSpeech=0; return;
+    sayBetween(`Miren, ${rd}: ${p.t}`); feedAdd("★",`<b>${p.n}</b>`); updStoryCount(); walkedSinceSpeech=0; return;
   }
 }
 
@@ -355,7 +361,7 @@ function guideStory(){
   let best=null, bs=Infinity;
   for(const g of GUIDE){ if(told["g_"+g.id]) continue; const sc = g.lat!=null ? dist(ref,g) : 650; if(g.lat!=null && sc>700) continue; if(sc<bs){ bs=sc; best=g; } }
   if(!best) return false;
-  markTold("g_"+best.id); say(`Les cuento una historia: ${best.t}. ${best.x}`,"📖 "+best.t); feedAdd("📖",`<b>${best.t}</b>`); updStoryCount(); walkedSinceSpeech=0; return true;
+  markTold("g_"+best.id); say(best.x,"📖 "+best.t); feedAdd("📖",`<b>${best.t}</b>`); updStoryCount(); walkedSinceSpeech=0; return true;
 }
 function autoStories(){
   if(!autoVoice||stationary||speaking||paused||waitingStart||view!=="guide") return;
@@ -382,7 +388,7 @@ function renderChapters(){
   $("#chapList").innerHTML=ch.map((c,i)=>`<button class="chap ${told["ch_"+s.id+"_"+i]?"done":""}" data-i="${i}"><span class="pl">${told["ch_"+s.id+"_"+i]?"✓":"▶"}</span><span><b>${c.t}</b><span class="s">~${Math.max(1,Math.round(c.x.split(/\s+/).length/150))} min · capítulo ${i+1}</span></span></button>`).join("");
   document.querySelectorAll("#chapList .chap").forEach(b=>b.onclick=()=>playChapter(+b.dataset.i));
 }
-function playChapter(i){ const s=STOPS[idx], c=CHAPTERS[s.id][i]; chainOn=true; markTold("ch_"+s.id+"_"+i); say(`${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); }
+function playChapter(i){ const s=STOPS[idx], c=CHAPTERS[s.id][i]; chainOn=true; markTold("ch_"+s.id+"_"+i); say(c.x,"📚 "+c.t); renderChapters(); updStoryCount(); }
 function renderQuiz(){
   const s=STOPS[idx], q=QUIZ[s.id]; $("#quizBox").classList.toggle("hidden",!q); if(!q) return;
   $("#quizPts").textContent=`${quizState.score} punto${quizState.score===1?"":"s"}`;
@@ -393,15 +399,15 @@ function renderQuiz(){
   $("#score").textContent="⭐ "+quizState.score;
 }
 const TRANS=["Les cuento algo más.","Y ahora, otra historia de este lugar.","Esperen, que hay más.","Sigamos, que esto les va a gustar.","Una más, y es de las buenas.","Y ya que estamos acá, les cuento esto."];
-function nextStory(){ const s=STOPS[idx]; if(!s) return; const ch=CHAPTERS[s.id]||[]; const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]); if(i<0) return; stopVoice(); setTimeout(()=>{ const c=ch[i]; chainOn=true; markTold("ch_"+s.id+"_"+i); say(`${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); },150); }
+function nextStory(){ const s=STOPS[idx]; if(!s) return; const ch=CHAPTERS[s.id]||[]; const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]); if(i<0) return; stopVoice(); setTimeout(()=>{ const c=ch[i]; chainOn=true; markTold("ch_"+s.id+"_"+i); say(c.x,"📚 "+c.t); renderChapters(); updStoryCount(); },150); }
 function onSpeechEnd(){
   if(speaking||paused||!chainOn||mode!=="stop") return;
   const s=STOPS[idx], ch=CHAPTERS[s.id]||[];
   const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]);
-  if(i>=0){ const c=ch[i]; markTold("ch_"+s.id+"_"+i); say(`${TRANS[(i+s.id.length)%TRANS.length]} ${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); return; }
+  if(i>=0){ const c=ch[i]; markTold("ch_"+s.id+"_"+i); say(c.x,"📚 "+c.t); renderChapters(); updStoryCount(); return; }
   chainOn=false;
   const q=QUIZ[s.id];
-  if(q && quizState.ans[s.id]==null){ say(`Y ahora, la trivia de esta parada. ${q.q} ¿${q.o.join(", ").replace(/, ([^,]*)$/," o $1")}? Respondan en la pantalla.`,"🧠 Trivia"); }
+  if(q && quizState.ans[s.id]==null){ say(`Antes de seguir, una pregunta. ${q.q} ¿${q.o.join(", ").replace(/, ([^,]*)$/," o $1")}? Respondan en la pantalla.`,"🧠 Trivia"); }
   else say("Cuando quieran, toquen Siguiente parada y seguimos caminando.","Guía");
 }
 
@@ -491,7 +497,7 @@ function tick(){
   // llegada (una sola vez por parada)
   if(d < s.r + Math.min(25,(pos.acc||0)/2) && !visited[s.id]){ arrive(true); return; }
   if(pos.acc<45 && !stationary){ const o=STOPS.findIndex((x,i)=>i!==idx && !visited[x.id] && dist(pos,x)<x.r); if(o>=0){ idx=o; startLeg(); toast("¡Pasaron por "+STOPS[o].name+"!"); arrive(true); return; } }
-  if(d<90 && !announcedNear && !told["near_"+s.id] && autoVoice && !stationary){ announcedNear=true; markTold("near_"+s.id); sayUrgent(`Ya casi llegan a ${s.name}. Unos ${Math.round(d/10)*10} metros.`); }
+  if(d<90 && !announcedNear && !told["near_"+s.id] && autoVoice && !stationary){ announcedNear=true; markTold("near_"+s.id); sayBetween(`Ya casi llegan a ${s.name}. Unos ${Math.round(d/10)*10} metros.`); }
   checkSteps(); checkPois(); maybeReroute(); lookupStreet(); autoStories(); reassure();
 }
 setInterval(()=>{ $("#clock").textContent=hhmm(new Date()); if(!$("#app").classList.contains("hidden")){ if(pos) updateMotion(pos); autoStories(); } },2500);
@@ -501,7 +507,7 @@ function arrive(auto){
   mode="stop"; view="guide"; visited[STOPS[idx].id]=true; render();
   if(auto) toast("📍 ¡Llegaron a "+STOPS[idx].name+"!");
   try{ navigator.vibrate&&navigator.vibrate([120,60,120]); }catch(e){}
-  if(!told["stop_"+STOPS[idx].id] || !auto){ markTold("stop_"+STOPS[idx].id); if(autoVoice||!auto){ chainOn=true; const n=(CHAPTERS[STOPS[idx].id]||[]).length; say(`Llegamos. ${STOPS[idx].narr}${n?" Quédense, que tengo "+(n===1?"una historia más":n+" historias más")+" de este lugar.":""}`,STOPS[idx].name); } }
+  if(!told["stop_"+STOPS[idx].id] || !auto){ markTold("stop_"+STOPS[idx].id); if(autoVoice||!auto){ chainOn=true; const n=(CHAPTERS[STOPS[idx].id]||[]).length; say(`Llegamos. ${STOPS[idx].narr}`,STOPS[idx].name); } }
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function nextUnvisited(){ for(let k=1;k<=STOPS.length;k++){ const j=(idx+k)%STOPS.length; if(!visited[STOPS[j].id]) return j; } return -1; }
@@ -516,7 +522,7 @@ $("#bArrive").onclick=()=>arrive(false);
 $("#bSkip").onclick=()=>{ stopVoice(); const keep=idx; const nx=(()=>{ for(let k=1;k<=STOPS.length;k++){ const j=(keep+k)%STOPS.length; if(!visited[STOPS[j].id]&&j!==keep) return j; } return -1; })(); if(nx<0){ toast("No quedan otras paradas"); return; } idx=nx; mode="walk"; startLeg(); render(); if(autoVoice) legSay(false); };
 $("#bNext").onclick=goNext;
 $("#bLeg").onclick=()=>legSay(true);
-$("#bPlay").onclick=()=>{ if(speaking) togglePause(); else { chainOn=true; const n=(CHAPTERS[STOPS[idx].id]||[]).length; say(`Llegamos. ${STOPS[idx].narr}${n?" Quédense, que tengo "+(n===1?"una historia más":n+" historias más")+" de este lugar.":""}`,STOPS[idx].name); } };
+$("#bPlay").onclick=()=>{ if(speaking) togglePause(); else { chainOn=true; const n=(CHAPTERS[STOPS[idx].id]||[]).length; say(`Llegamos. ${STOPS[idx].narr}`,STOPS[idx].name); } };
 $("#bMore").onclick=()=>{ const n=$("#sNarr"); n.classList.toggle("clamp"); $("#bMore").textContent=n.classList.contains("clamp")?"Leer todo ▾":"Mostrar menos ▴"; };
 $("#bAns").onclick=()=>{ $("#sAns").classList.remove("hidden"); $("#bAns").classList.add("hidden"); };
 $("#bList").onclick=()=>{ if(!STOPS.length){ goPlanner(); return; } view=view==="list"?"guide":"list"; render(); window.scrollTo({top:0}); };

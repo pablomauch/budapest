@@ -246,7 +246,7 @@ function fillPlace(id){
 }
 /* historias del lugar, para escuchar en cualquier momento desde la ficha */
 let cardChain=[];
-function cardSegs(id){ const p=P(id); return [{t:"Relato completo en el lugar",x:`${p.name}. ${p.narr}`}].concat((CHAPTERS[id]||[]).map(c=>({t:c.t,x:`${c.t}. ${c.x}`}))); }
+function cardSegs(id){ const p=P(id); return [{t:"Relato completo en el lugar",x:p.narr}].concat((CHAPTERS[id]||[]).map(c=>({t:c.t,x:c.x}))); }
 function renderPdStories(id){
  const segs=cardSegs(id), box=$("#pdStList");
  const tot=Math.max(1,Math.round(segs.map(s=>s.x).join(" ").split(/\s+/).length/150));
@@ -259,7 +259,7 @@ function renderPdStories(id){
 }
 function playCardSeg(sg){ const keep=cardChain; say(sg.x,"🏛 "+sg.t); cardChain=keep; setTimeout(()=>pdId&&renderPdStories(pdId),300); }
 { const _say=say; say=function(t,l){ if(!(l&&l.startsWith("🏛 "))) cardChain=[]; return _say(t,l); }; }
-{ const _ose=onSpeechEnd; onSpeechEnd=function(){ if(cardChain.length&&!speaking&&!paused){ const sg=cardChain.shift(); const rest=cardChain; say("Sigo con otra historia. "+sg.x,"🏛 "+sg.t); cardChain=rest; if(pdId) renderPdStories(pdId); return; } _ose(); }; }
+{ const _ose=onSpeechEnd; onSpeechEnd=function(){ if(cardChain.length&&!speaking&&!paused){ const sg=cardChain.shift(); const rest=cardChain; say(sg.x,"🏛 "+sg.t); cardChain=rest; if(pdId) renderPdStories(pdId); return; } _ose(); }; }
 $("#pdBg").onclick=closePlace; $("#pdClose").onclick=closePlace;
 $("#pdAdd").onclick=()=>toggleInPlan(pdId);
 $("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(`${p.name}. ${BRIEF[p.id]||p.narr}`,p.name); };
