@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Budapest">
 <meta name="theme-color" content="#0b101a">
-<meta name="build" content="20261124142656">
+<meta name="build" content="20261125114647">
 <title>Budapest a pie · Audioguía</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -424,6 +424,9 @@ body.hasplayer #app{padding-bottom:calc(var(--sb) + 92px)}
 .covmiss{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13px;color:var(--mute)}
 .covchip{padding:6px 10px;border-radius:99px;background:rgba(230,184,92,.14);border:1px solid rgba(230,184,92,.45);font-size:12.5px;font-weight:700;color:var(--gold2)}
 .covhint{display:block;font-size:12px;color:var(--mute);margin-top:6px}
+
+.gofab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));z-index:60;background:linear-gradient(180deg,#f0c766,#d9a43a);color:#1a1405;font-weight:700;font-size:17px;border:0;border-radius:999px;padding:15px 26px;box-shadow:0 8px 24px rgba(0,0,0,.45);white-space:nowrap}
+body.hasplayer .gofab{bottom:calc(96px + env(safe-area-inset-bottom))}
 /* ===== LANZADOR ===== */
 #splash{position:fixed;inset:0;z-index:5000;background:#05080f;overflow:hidden;transition:opacity .9s ease,visibility .9s;cursor:pointer}
 #splash.out{opacity:0;visibility:hidden}
@@ -549,8 +552,8 @@ html,body{overscroll-behavior-y:contain}
       <div class="panel ipanel">
         <div class="ihead"><h2>Recorrido del <span id="bStartN"></span></h2></div>
         <p class="isum" id="planSum"></p>
+        <button class="cta" id="bStart" style="margin:4px 0 14px">Empezar el recorrido →</button>
         <div id="itin"></div>
-        <button class="cta" id="bStart" style="margin-top:14px">Empezar el recorrido →</button>
       </div>
       <h2 class="sec-t" style="margin-top:28px">Lugares para elegir</h2>
       <div class="cchips" id="catChips"></div>
@@ -628,6 +631,7 @@ html,body{overscroll-behavior-y:contain}
   </div>
 </section>
 
+<button id="bGoFab" class="gofab hidden">▶ Empezar el recorrido</button>
 <div class="player hidden" id="player">
   <button class="pbtn main" id="pPause" aria-label="Pausa">⏸</button>
   <div class="np"><b id="npT">Listo</b><span id="npS"></span></div>
@@ -723,7 +727,7 @@ html,body{overscroll-behavior-y:contain}
 
 <div class="toast" id="toast"></div>
 <script>
-const BUILD="20261124142656";
+const BUILD="20261125114647";
 /* ======================= CATÁLOGO DE LUGARES =======================
    cats: imperdible | dia | noche | comida
    hours: [Dom,Lun,Mar,Mié,Jue,Vie,Sáb]  ""=cerrado · "24h" · "HH:MM-HH:MM"
@@ -3327,6 +3331,13 @@ function reorderFromHere(){
 }
 let activeDay=null;
 $("#bStart").onclick=startDay;
+
+/* botón flotante para empezar, visible cuando el botón principal no está en pantalla */
+(function(){ const b=$("#bStart"), f=$("#bGoFab"); let vis=true;
+ const upd=()=>{ const show = typeof view!=="undefined" && view==="plan" && !b.classList.contains("hidden") && !vis && !$("#pd")?.classList.contains("on") && !document.querySelector(".sheet.on,#pro.on,#tips.on");
+   f.textContent="▶ "+b.textContent.replace(/\s*→$/,""); f.classList.toggle("hidden",!show); };
+ try{ new IntersectionObserver(es=>{ vis=es[0].isIntersecting; upd(); }).observe(b); }catch(e){}
+ f.onclick=()=>b.click(); setInterval(upd,700); })();
 
 /* ======================= ARRANQUE ======================= */
 view="plan";

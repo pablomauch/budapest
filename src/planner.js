@@ -273,3 +273,10 @@ function reorderFromHere(){
 }
 let activeDay=null;
 $("#bStart").onclick=startDay;
+
+/* botón flotante para empezar, visible cuando el botón principal no está en pantalla */
+(function(){ const b=$("#bStart"), f=$("#bGoFab"); let vis=true;
+ const upd=()=>{ const show = typeof view!=="undefined" && view==="plan" && !b.classList.contains("hidden") && !vis && !$("#pd")?.classList.contains("on") && !document.querySelector(".sheet.on,#pro.on,#tips.on");
+   f.textContent="▶ "+b.textContent.replace(/\s*→$/,""); f.classList.toggle("hidden",!show); };
+ try{ new IntersectionObserver(es=>{ vis=es[0].isIntersecting; upd(); }).observe(b); }catch(e){}
+ f.onclick=()=>b.click(); setInterval(upd,700); })();
