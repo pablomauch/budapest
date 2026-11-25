@@ -236,13 +236,30 @@ function fillPlace(id){
  $("#pdNarr").textContent=BRIEF[id]||p.narr;
  $("#pdTip").textContent=p.tip||"";
  const ch=(CHAPTERS[id]||[]).length; const mins=Math.max(1,Math.round((p.narr+" "+(CHAPTERS[id]||[]).map(c=>c.x).join(" ")).split(/\s+/).length/150));
- $("#pdMore").innerHTML=`🎧 <b>En el lugar:</b> visita guiada de unos ${mins} minutos${ch?`, con ${ch+1} historias`:""}${QUIZ[id]?" y una trivia":""}. Esta ficha es solo para decidir; las historias se las cuento allá.`;
+ $("#pdMore").innerHTML=`🎧 <b>En el lugar:</b> visita guiada de unos ${mins} minutos${ch?`, con ${ch+1} historias`:""}${QUIZ[id]?" y una trivia":""}. Se las cuento al llegar, y también pueden escucharlas desde «Las historias del lugar».`;
+ renderPdStories(id);
  $("#pdAdd").textContent=here?`✓ En el ${d.label} · quitar`:(other?`Mover al ${d.label} (está en ${other.label})`:`+ Agregar al ${d.label}`);
  $("#pdAdd").className="btn full "+(here?"":"gold");
  $("#pdMaps").href=mapsUrl(p);
  $("#pdListen .lt b").textContent="Escuchar el resumen";
  $("#pdListen .lt span").textContent=`~${Math.max(1,Math.round((BRIEF[id]||p.narr).split(/\s+/).length/150))} min · qué van a ver y por qué ir`;
 }
+/* historias del lugar, para escuchar en cualquier momento desde la ficha */
+let cardChain=[];
+function cardSegs(id){ const p=P(id); return [{t:"Relato completo en el lugar",x:`${p.name}. ${p.narr}`}].concat((CHAPTERS[id]||[]).map(c=>({t:c.t,x:`${c.t}. ${c.x}`}))); }
+function renderPdStories(id){
+ const segs=cardSegs(id), box=$("#pdStList");
+ const tot=Math.max(1,Math.round(segs.map(s=>s.x).join(" ").split(/\s+/).length/150));
+ box.innerHTML=`<button class="chap" data-k="all"><span class="pl">▶</span><span><b>Escuchar todo seguido</b><span class="s">~${tot} min · ${segs.length} partes</span></span></button>`+
+  segs.map((c,i)=>`<button class="chap ${speaking&&nowLabel==="🏛 "+c.t?"now":""}" data-k="${i}"><span class="pl">${i+1}</span><span><b>${i?c.t:"La llegada"}</b><span class="s">~${Math.max(1,Math.round(c.x.split(/\s+/).length/150))} min</span></span></button>`).join("");
+ box.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ unlockAudio(); const k=b.dataset.k, sg=cardSegs(id);
+   if(k==="all"){ cardChain=sg.slice(1); playCardSeg(sg[0]); } else { cardChain=[]; playCardSeg(sg[+k]); }
+   (CHAPTERS[id]||[]).forEach((c,j)=>{ if(k==="all"||+k===j+1) markTold("ch_"+id+"_"+j); });
+ });
+}
+function playCardSeg(sg){ const keep=cardChain; say(sg.x,"🏛 "+sg.t); cardChain=keep; setTimeout(()=>pdId&&renderPdStories(pdId),300); }
+{ const _say=say; say=function(t,l){ if(!(l&&l.startsWith("🏛 "))) cardChain=[]; return _say(t,l); }; }
+{ const _ose=onSpeechEnd; onSpeechEnd=function(){ if(cardChain.length&&!speaking&&!paused){ const sg=cardChain.shift(); const rest=cardChain; say("Sigo con otra historia. "+sg.x,"🏛 "+sg.t); cardChain=rest; if(pdId) renderPdStories(pdId); return; } _ose(); }; }
 $("#pdBg").onclick=closePlace; $("#pdClose").onclick=closePlace;
 $("#pdAdd").onclick=()=>toggleInPlan(pdId);
 $("#pdListen").onclick=()=>{ unlockAudio(); const p=P(pdId); if(speaking&&nowLabel===p.name){ togglePause(); return; } say(`${p.name}. ${BRIEF[p.id]||p.narr}`,p.name); };

@@ -103,7 +103,7 @@ function deviceSpeak(text,my){
   if(!sysLang&&voice){u.voice=voice;u.lang=voice.lang;} else u.lang=sysLang||"es-AR";
   u.rate=rate; u.pitch=1;
   u.onend=()=>{ if(my===gen && !paused) next(); };
-  u.onerror=e=>{ if(my===gen && e.error!=="interrupted" && e.error!=="canceled"){ speaking=false; updatePlayer(); } };
+  u.onerror=e=>{ if(my===gen && e.error!=="interrupted" && e.error!=="canceled" && !paused) next(); };
   synth.speak(u); updatePlayer();
 }
 function stopVoice(){ chainOn=false; hardCancel(); speaking=false; queue=[]; resumeAfter=null; paused=false; lastSpeechEnd=Date.now(); updatePlayer(); }
@@ -395,7 +395,7 @@ function renderQuiz(){
 const TRANS=["Les cuento algo más.","Y ahora, otra historia de este lugar.","Esperen, que hay más.","Sigamos, que esto les va a gustar.","Una más, y es de las buenas.","Y ya que estamos acá, les cuento esto."];
 function nextStory(){ const s=STOPS[idx]; if(!s) return; const ch=CHAPTERS[s.id]||[]; const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]); if(i<0) return; stopVoice(); setTimeout(()=>{ const c=ch[i]; chainOn=true; markTold("ch_"+s.id+"_"+i); say(`${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); },150); }
 function onSpeechEnd(){
-  if(speaking||paused||!chainOn||!autoVoice||mode!=="stop"||view!=="guide") return;
+  if(speaking||paused||!chainOn||mode!=="stop") return;
   const s=STOPS[idx], ch=CHAPTERS[s.id]||[];
   const i=ch.findIndex((c,k)=>!told["ch_"+s.id+"_"+k]);
   if(i>=0){ const c=ch[i]; markTold("ch_"+s.id+"_"+i); say(`${TRANS[(i+s.id.length)%TRANS.length]} ${c.t}. ${c.x}`,"📚 "+c.t); renderChapters(); updStoryCount(); return; }
@@ -606,3 +606,17 @@ $("#bSet").onclick=()=>openSheet(true); $("#sheetBg").onclick=()=>openSheet(fals
 
 $("#bCompass").onclick=async()=>{ await startCompass(); $("#bCompass").classList.add("hidden"); headUp=true; $("#bHead").textContent="🧭"; $("#bHead").classList.add("on"); follow=true; $("#bFollow").classList.add("on"); setTimeout(()=>{ if(!compassOn) toast("No llega la brújula. En el iPhone: Ajustes → Safari → Movimiento y orientación, actívenlo y recarguen."); },2500); };
 setInterval(()=>{ if(!$("#app").classList.contains("hidden") && mode==="walk") $("#bCompass").classList.toggle("hidden", compassOn); },2000);
+
+/* vigilante: si iOS no avisa que terminó una frase (pantalla bloqueada, error), seguimos igual */
+let wdStuck=0;
+setInterval(()=>{ try{
+  if(paused) { wdStuck=0; return; }
+  if(speaking){
+    const idle = premiumOn() ? (AUD.ended || (AUD.paused && AUD.currentTime>0)) : (synth && !synth.speaking && !synth.pending);
+    wdStuck = idle ? wdStuck+1 : 0;
+    if(wdStuck>=(premiumOn()?14:2)){ wdStuck=0; next(); }
+    return;
+  }
+  wdStuck=0;
+  if(Date.now()-lastSpeechEnd>3500 && ((chainOn&&mode==="stop") || (typeof cardChain!=="undefined"&&cardChain.length))){ lastSpeechEnd=Date.now(); onSpeechEnd(); }
+}catch(e){} },1500);
